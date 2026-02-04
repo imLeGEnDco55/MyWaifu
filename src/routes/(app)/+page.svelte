@@ -7,6 +7,7 @@
 	import SpeechBubble from '$lib/components/chat/SpeechBubble.svelte';
 	import { EventScene } from '$lib/components/events';
 	import { OnboardingModal } from '$lib/components/onboarding';
+	import MemoryGraphModal from '$lib/components/memory/MemoryGraphModal.svelte';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte';
@@ -48,6 +49,9 @@
 	// Info modal state
 	let showInfoModal = $state(false);
 
+	// Memory graph modal state
+	let showMemoryGraph = $state(false);
+
 	// Onboarding state
 	let showOnboarding = $state(false);
 	let onboardingDismissed = $state(false);
@@ -83,9 +87,7 @@
 				// Check if we need to backfill embeddings
 				const status = await getEmbeddingBackfillStatus();
 				if (status.withoutEmbeddings > 0) {
-					console.log(`[Embeddings] Backfilling ${status.withoutEmbeddings} facts...`);
 					const result = await backfillEmbeddings();
-					console.log(`[Embeddings] Backfill complete: ${result.success} success, ${result.failed} failed`);
 				}
 			}
 		});
@@ -349,10 +351,13 @@
 </script>
 
 <div class="app-container">
-	<TopLeftButtons />
+	<TopLeftButtons onOpenMemoryGraph={() => showMemoryGraph = true} />
 	<TopRightButtons onInfoClick={() => showInfoModal = true} />
 	{#if showInfoModal}
 		<InfoModal onClose={() => showInfoModal = false} />
+	{/if}
+	{#if showMemoryGraph}
+		<MemoryGraphModal onClose={() => showMemoryGraph = false} />
 	{/if}
 
 	<main class="main-content">

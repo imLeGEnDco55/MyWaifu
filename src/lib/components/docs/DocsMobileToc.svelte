@@ -74,25 +74,37 @@
 	.mobile-toc-trigger {
 		display: none;
 		position: fixed;
-		bottom: 1rem;
-		right: 1rem;
+		bottom: 1.5rem;
+		right: 1.5rem;
 		z-index: 20;
 		align-items: center;
-		gap: 0.375rem;
-		padding: 0.5rem 0.875rem;
+		gap: 0.5rem;
+		padding: 0.75rem 1.25rem;
 		font-size: 0.8125rem;
-		font-weight: 500;
-		background: var(--docs-surface);
-		color: var(--docs-text);
-		border: 1px solid var(--docs-border);
-		border-radius: 0.5rem;
+		font-weight: 600;
+		background: var(--docs-btn-gradient);
+		color: white;
+		border: 1px solid rgba(0, 0, 0, 0.1);
+		border-radius: 999px;
 		cursor: pointer;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-		transition: background 0.15s;
+		box-shadow:
+			0 1px 0 rgba(255, 255, 255, 0.3) inset,
+			0 4px 16px var(--docs-glow),
+			0 4px 12px rgba(0, 0, 0, 0.15);
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
 	}
 
 	.mobile-toc-trigger:hover {
-		background: var(--docs-border);
+		transform: translateY(-2px);
+		box-shadow:
+			0 1px 0 rgba(255, 255, 255, 0.4) inset,
+			0 6px 24px var(--docs-glow-strong),
+			0 6px 16px rgba(0, 0, 0, 0.2);
+	}
+
+	.mobile-toc-trigger:active {
+		transform: translateY(0);
 	}
 
 	@media (max-width: 1024px) {
@@ -105,7 +117,9 @@
 		position: fixed;
 		inset: 0;
 		z-index: 50;
-		background: rgba(0, 0, 0, 0.4);
+		background: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(4px);
+		-webkit-backdrop-filter: blur(4px);
 		display: flex;
 		align-items: flex-end;
 		justify-content: center;
@@ -114,59 +128,109 @@
 	.mobile-toc-panel {
 		width: 100%;
 		max-width: 480px;
-		max-height: 60vh;
-		background: var(--docs-bg);
-		border: 1px solid var(--docs-border);
+		max-height: 70vh;
+		background: var(--docs-bg-solid);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border: 1px solid var(--docs-glass-border);
 		border-bottom: none;
-		border-radius: 0.75rem 0.75rem 0 0;
-		overflow-y: auto;
+		border-radius: 1.5rem 1.5rem 0 0;
+		overflow: hidden;
+		box-shadow:
+			0 1px 0 var(--docs-inner-highlight) inset,
+			0 -8px 40px rgba(0, 0, 0, 0.25);
 	}
 
 	.mobile-toc-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 1rem 1.25rem;
-		font-size: 0.875rem;
-		font-weight: 600;
+		padding: 1.25rem 1.25rem;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
 		color: var(--docs-text);
 		border-bottom: 1px solid var(--docs-border);
-		position: sticky;
-		top: 0;
-		background: var(--docs-bg);
+		background: var(--docs-panel-gradient);
+		text-shadow: 0 1px 0 var(--docs-inner-highlight);
 	}
 
 	.mobile-toc-close {
-		background: none;
-		border: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		background: var(--docs-surface);
+		border: 1px solid var(--docs-border);
+		border-radius: 0.625rem;
 		font-size: 1.25rem;
 		color: var(--docs-text-muted);
 		cursor: pointer;
-		padding: 0.25rem;
 		line-height: 1;
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		box-shadow:
+			0 1px 0 var(--docs-inner-highlight) inset,
+			0 2px 4px rgba(0, 0, 0, 0.05);
+	}
+
+	.mobile-toc-close:hover {
+		background: var(--docs-surface-solid);
+		color: var(--docs-accent);
+		border-color: var(--docs-accent);
+		box-shadow:
+			0 1px 0 var(--docs-inner-highlight) inset,
+			0 0 12px var(--docs-glow);
+	}
+
+	.mobile-toc-close:active {
+		transform: scale(0.95);
 	}
 
 	.mobile-toc-list {
 		list-style: none;
 		margin: 0;
-		padding: 0.5rem 0;
+		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.375rem;
+		overflow-y: auto;
+		max-height: calc(70vh - 4rem);
 	}
 
 	.mobile-toc-link {
 		display: block;
-		padding: 0.5rem 1.25rem;
-		font-size: 0.8125rem;
+		padding: 0.875rem 1rem;
+		font-size: 0.9375rem;
 		color: var(--docs-text-muted);
 		text-decoration: none;
-		transition: color 0.15s, background 0.15s;
+		border-radius: 0.75rem;
+		border: 1px solid transparent;
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	.mobile-toc-link:hover {
 		color: var(--docs-text);
 		background: var(--docs-surface);
+		border-color: var(--docs-border);
+		box-shadow:
+			0 1px 0 var(--docs-inner-highlight) inset,
+			0 2px 4px rgba(0, 0, 0, 0.05);
+	}
+
+	.mobile-toc-link:active {
+		color: white;
+		background: var(--docs-btn-gradient);
+		border-color: rgba(0, 0, 0, 0.1);
+		box-shadow:
+			0 1px 0 rgba(255, 255, 255, 0.3) inset,
+			0 0 12px var(--docs-glow);
+		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
 	}
 
 	.mobile-toc-link.indent {
 		padding-left: 2rem;
+		font-size: 0.875rem;
 	}
 </style>

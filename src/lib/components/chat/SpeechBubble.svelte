@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
-	import { themeStore } from '$lib/stores/theme.svelte';
 
 	interface Props {
 		message: string;
@@ -10,6 +9,26 @@
 	}
 
 	let { message, isTyping = false, onHide }: Props = $props();
+
+	// Design language colors - skeuomorphic style
+	const BUBBLE_COLORS = {
+		light: {
+			background: 'linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)',
+			border: 'rgba(0, 0, 0, 0.08)',
+			text: '#1a1a1a',
+			dots: '#01B2FF',
+			shadow: '0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+			tailColor: '#f5f5f5'
+		},
+		dark: {
+			background: 'linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%)',
+			border: 'rgba(255, 255, 255, 0.1)',
+			text: '#fafafa',
+			dots: '#01B2FF',
+			shadow: '0 4px 16px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+			tailColor: '#1f1f1f'
+		}
+	};
 
 	// Detect dark mode
 	let isDark = $state(false);
@@ -25,32 +44,24 @@
 		}
 	});
 
-	// Get current theme colors for inline styles (ensures reactivity on theme change)
-	const themeColors = $derived(themeStore.currentTheme.colors);
+	// Simple color getters based on dark mode
 	const glassBackground = $derived(() => {
-		const c = themeColors;
-		const base = isDark ? c.baseDark : c.base;
-		// Convert hex to RGB for rgba()
-		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(base);
-		if (!result) return 'rgba(0, 0, 0, 0.95)';
-		const rgb = `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
-		return `rgba(${rgb}, 0.95)`;
+		return isDark ? BUBBLE_COLORS.dark.background : BUBBLE_COLORS.light.background;
 	});
 	const glassBorder = $derived(() => {
-		const c = themeColors;
-		const accent = isDark ? (c.accentDark || c.accent) : c.accent;
-		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(accent);
-		if (!result) return 'rgba(0, 0, 0, 0.15)';
-		const rgb = `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
-		return `rgba(${rgb}, ${isDark ? 0.15 : 0.2})`;
+		return isDark ? BUBBLE_COLORS.dark.border : BUBBLE_COLORS.light.border;
+	});
+	const glassShadow = $derived(() => {
+		return isDark ? BUBBLE_COLORS.dark.shadow : BUBBLE_COLORS.light.shadow;
+	});
+	const tailColor = $derived(() => {
+		return isDark ? BUBBLE_COLORS.dark.tailColor : BUBBLE_COLORS.light.tailColor;
 	});
 	const textColor = $derived(() => {
-		const c = themeColors;
-		return isDark ? c.textDark : c.text;
+		return isDark ? BUBBLE_COLORS.dark.text : BUBBLE_COLORS.light.text;
 	});
-	const overlayColor = $derived(() => {
-		const c = themeColors;
-		return isDark ? c.overlayDark : c.overlay;
+	const dotsColor = $derived(() => {
+		return isDark ? BUBBLE_COLORS.dark.dots : BUBBLE_COLORS.light.dots;
 	});
 
 	// Get screen position from VRM store for 3D tracking
@@ -100,11 +111,11 @@
 			class="speech-bubble"
 			class:dark={isDark}
 			onclick={handleClick}
-			style="background: {glassBackground()}; border-color: {glassBorder()};"
+			style="background: {glassBackground()}; border-color: {glassBorder()}; box-shadow: {glassShadow()};"
 		>
 			<div class="speech-bubble-content">
 				{#if isTyping}
-					<div class="typing-indicator" style="--dot-color: {overlayColor()}">
+					<div class="typing-indicator" style="--dot-color: {dotsColor()}">
 						<span></span>
 						<span></span>
 						<span></span>
@@ -113,7 +124,7 @@
 					<p class="message" style="color: {textColor()}">{message}</p>
 				{/if}
 			</div>
-			<div class="bubble-tail" style="border-right-color: {glassBackground()}"></div>
+			<div class="bubble-tail" style="border-right-color: {tailColor()}"></div>
 		</div>
 	</div>
 {/if}
@@ -148,14 +159,14 @@
 		backdrop-filter: blur(16px);
 		-webkit-backdrop-filter: blur(16px);
 		border: 1px solid;
-		border-radius: 1rem;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+		border-radius: 16px;
 		pointer-events: auto;
 		cursor: pointer;
+		transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 	}
 
-	.speech-bubble.dark {
-		box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+	.speech-bubble:hover {
+		transform: scale(1.02) translateY(-1px);
 	}
 
 	.speech-bubble-content {
@@ -204,16 +215,19 @@
 
 	.typing-indicator {
 		display: flex;
-		gap: 3px;
+		gap: 4px;
 		padding: 0.125rem 0;
 	}
 
 	.typing-indicator span {
-		width: 6px;
-		height: 6px;
-		background: var(--dot-color);
+		width: 8px;
+		height: 8px;
+		background: linear-gradient(180deg, #4dd0ff 0%, var(--dot-color) 100%);
 		border-radius: 50%;
 		animation: bounce 1.4s ease-in-out infinite;
+		box-shadow:
+			0 2px 4px rgba(1, 178, 255, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4);
 	}
 
 	.typing-indicator span:nth-child(1) {

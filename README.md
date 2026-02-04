@@ -26,8 +26,9 @@
 - **Character Customization**: Customize your companion's name, personality, and system prompt
 - **Companion System**: Multi-axis relationship tracking with mood, events, and semantic memory
 - **Semantic Memory**: Local AI-powered memory search using Transformers.js - finds memories by meaning, not just keywords
+- **Memory Graph**: Interactive visualization showing how memories connect semantically
 - **Data Export/Import**: Download your data as a save file, restore anytime
-- **Theming**: 4 color themes (Default, Rosé Pine, Tokyo Night, Nord) with light/dark modes
+- **Theming**: Light and dark mode support with system preference detection
 
 ### Local-First Storage
 
@@ -198,7 +199,6 @@ pnpm lint      # Type-check and lint the project
 - [ ] **Companion Gender System** - Gender selection with male/female specific animations and behaviors
 - [ ] **Multi-provider STT** - Support for additional speech-to-text providers beyond Web Speech API
 - [ ] **Enhanced User Controls** - More granular control over companion behavior and responses
-- [ ] **Custom Theme Builder** - Create and save your own color themes
 - [ ] **Custom Lighting Controls** - Adjust 3D scene lighting, environment, and atmosphere
 - [ ] **LLM-Controlled Expressions** - Dynamic facial animations and emotions driven by LLM responses
 - [ ] **Live2D Support** - Alternative to VRM for 2D animated avatars
@@ -241,6 +241,7 @@ Utsuwa is built on the shoulders of these excellent projects:
 
 - **[bits-ui](https://github.com/huntabyte/bits-ui)** - Headless UI components for Svelte
 - **[Dexie.js](https://github.com/dexie/Dexie.js)** - IndexedDB wrapper for local storage
+- **[force-graph](https://github.com/vasturiano/force-graph)** - Force-directed graph visualization for memory graph
 - **[simple-icons](https://github.com/simple-icons/simple-icons)** - SVG icons for provider logos
 
 ### 3D Effects

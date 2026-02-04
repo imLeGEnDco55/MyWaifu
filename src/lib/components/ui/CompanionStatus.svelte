@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { characterStore } from '$lib/stores/character.svelte';
-	import { Progress, Icon } from '$lib/components/ui';
-	import CircularGauge from './CircularGauge.svelte';
+	import { Icon } from '$lib/components/ui';
 
 	let isExpanded = $state(false);
 
@@ -10,6 +9,21 @@
 	const stageInfo = $derived(characterStore.stageInfo);
 	const affectionPercent = $derived(characterStore.affectionPercent);
 	const isCompanionMode = $derived(characterStore.appMode === 'companion');
+
+	// Stats config with colors for the vertical bars
+	const datingStats = $derived([
+		{ key: 'affection', label: 'Love', icon: 'heart', value: affectionPercent, color: '#ff6b9d', glowColor: 'rgba(255, 107, 157, 0.5)' },
+		{ key: 'trust', label: 'Trust', icon: 'shield', value: charState.trust, color: '#4dd0ff', glowColor: 'rgba(77, 208, 255, 0.5)' },
+		{ key: 'intimacy', label: 'Intimacy', icon: 'sparkles', value: charState.intimacy, color: '#c084fc', glowColor: 'rgba(192, 132, 252, 0.5)' },
+		{ key: 'comfort', label: 'Comfort', icon: 'home', value: charState.comfort, color: '#4ade80', glowColor: 'rgba(74, 222, 128, 0.5)' },
+		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: '#fbbf24', glowColor: 'rgba(251, 191, 36, 0.5)' },
+		{ key: 'respect', label: 'Respect', icon: 'award', value: charState.respect, color: '#60a5fa', glowColor: 'rgba(96, 165, 250, 0.5)' }
+	]);
+
+	const companionStats = $derived([
+		{ key: 'energy', label: 'Energy', icon: 'zap', value: charState.energy, color: '#4dd0ff', glowColor: 'rgba(77, 208, 255, 0.5)' },
+		{ key: 'chats', label: 'Chats', icon: 'message-circle', value: Math.min(charState.totalInteractions, 100), color: '#4ade80', glowColor: 'rgba(74, 222, 128, 0.5)' }
+	]);
 </script>
 
 <div
@@ -20,128 +34,57 @@
 	<!-- Expanded content (appears above trigger) -->
 	{#if isExpanded}
 		<div class="status-details">
-			{#if isCompanionMode}
-				<!-- Companion Mode: Simplified view -->
-				<div class="companion-header">
-					<Icon name="sparkles" size={16} color="var(--accent)" />
-					<span class="companion-title">Companion</span>
-				</div>
-
-				<!-- Energy only -->
-				<div class="stat-row">
-					<Icon name="zap" size={12} />
-					<span class="stat-label">Energy</span>
-					<div class="stat-bar-container">
-						<div
-							class="stat-bar"
-							style="width: {charState.energy}%; background: var(--stat-energy)"
-						></div>
+			<!-- Sims-style vertical stat bars -->
+			<div class="stat-bars" class:companion-mode={isCompanionMode}>
+				{#each isCompanionMode ? companionStats : datingStats as stat, i}
+					<div class="stat-bar-wrapper" style="--delay: {i}; --bar-color: {stat.color}; --bar-glow: {stat.glowColor}">
+						<div class="stat-bar-track">
+							<div class="stat-bar-fill" style="height: {stat.value}%">
+								<div class="stat-bar-shine"></div>
+							</div>
+							<div class="stat-bar-bubbles">
+								{#each Array(3) as _, j}
+									<div class="bubble" style="--bubble-delay: {j * 0.3}s"></div>
+								{/each}
+							</div>
+						</div>
+						<div class="stat-icon">
+							<Icon name={stat.icon} size={14} />
+						</div>
+						<span class="stat-label">{stat.label}</span>
 					</div>
-					<span class="stat-value">{charState.energy}</span>
-				</div>
+				{/each}
+			</div>
 
-				<!-- Quick Stats -->
+			{#if !isCompanionMode}
+				<!-- Quick Stats Row -->
 				<div class="quick-stats">
 					<div class="quick-stat">
-						<Icon name="message-circle" size={12} />
-						<span>{charState.totalInteractions} chats</span>
+						<Icon name="calendar" size={11} />
+						<span>{charState.daysKnown}d</span>
+					</div>
+					<div class="quick-stat">
+						<Icon name="message-circle" size={11} />
+						<span>{charState.totalInteractions}</span>
 					</div>
 					{#if charState.currentStreak > 1}
 						<div class="quick-stat streak">
-							<Icon name="flame" size={12} />
-							<span>{charState.currentStreak} day streak</span>
+							<Icon name="flame" size={11} />
+							<span>{charState.currentStreak}</span>
 						</div>
 					{/if}
+					<a href="/settings/persona" class="quick-stat profile-link">
+						<span>Profile</span>
+						<Icon name="arrow-right" size={11} />
+					</a>
 				</div>
-			{:else}
-				<!-- Dating Sim Mode: Full view -->
-				<!-- Relationship Stage & Affection -->
-				<div class="affection-section">
-					<div class="affection-label">
-						<span class="heart-glow"><Icon name="heart" size={14} color="var(--ctp-pink)" /></span>
-						<span class="tier-name">{stageInfo.name}</span>
-						<span class="affection-value">{affectionPercent}%</span>
-					</div>
-					<Progress value={affectionPercent} variant="affection" size="md" />
-				</div>
-
-				<!-- Core Stats Trio -->
-				<div class="stats-trio">
-					<CircularGauge
-						value={charState.trust}
-						iconName="shield"
-						label="Trust"
-						color="var(--stat-trust)"
-						size={56}
-						strokeWidth={5}
-					/>
-					<CircularGauge
-						value={charState.intimacy}
-						iconName="heart"
-						label="Intimacy"
-						color="var(--stat-intimacy)"
-						size={56}
-						strokeWidth={5}
-					/>
-					<CircularGauge
-						value={charState.comfort}
-						iconName="home"
-						label="Comfort"
-						color="var(--stat-comfort)"
-						size={56}
-						strokeWidth={5}
-					/>
-				</div>
-
-				<!-- Secondary Stats -->
-				<div class="secondary-stats">
-					<div class="stat-row">
-						<Icon name="zap" size={12} />
-						<span class="stat-label">Energy</span>
-						<div class="stat-bar-container">
-							<div
-								class="stat-bar"
-								style="width: {charState.energy}%; background: var(--stat-energy)"
-							></div>
-						</div>
-						<span class="stat-value">{charState.energy}</span>
-					</div>
-					<div class="stat-row">
-						<Icon name="award" size={12} />
-						<span class="stat-label">Respect</span>
-						<div class="stat-bar-container">
-							<div
-								class="stat-bar"
-								style="width: {charState.respect}%; background: var(--stat-respect)"
-							></div>
-						</div>
-						<span class="stat-value">{charState.respect}</span>
-					</div>
-				</div>
-
-				<!-- Quick Stats -->
+			{:else if charState.currentStreak > 1}
 				<div class="quick-stats">
-					<div class="quick-stat">
-						<Icon name="calendar" size={12} />
-						<span>{charState.daysKnown} days</span>
+					<div class="quick-stat streak">
+						<Icon name="flame" size={11} />
+						<span>{charState.currentStreak} day streak</span>
 					</div>
-					<div class="quick-stat">
-						<Icon name="message-circle" size={12} />
-						<span>{charState.totalInteractions} chats</span>
-					</div>
-					{#if charState.currentStreak > 1}
-						<div class="quick-stat streak">
-							<Icon name="flame" size={12} />
-							<span>{charState.currentStreak} day streak</span>
-						</div>
-					{/if}
 				</div>
-
-				<!-- View Profile Link -->
-				<a href="/settings/persona" class="profile-link">
-					View Full Profile
-					<Icon name="arrow-right" size={14} />
-				</a>
 			{/if}
 		</div>
 	{/if}
@@ -161,30 +104,70 @@
 <style>
 	.status-container {
 		position: fixed;
-		bottom: 5rem;
+		bottom: 6rem;
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: 35;
-		background: var(--glass-bg-solid);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
-		border: 1px solid var(--glass-border);
-		border-radius: 1rem;
+		/* Glossy panel - like a PS2 menu */
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.95) 0%,
+			rgba(245, 245, 250, 0.9) 50%,
+			rgba(235, 235, 240, 0.95) 100%
+		);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border: 1px solid rgba(255, 255, 255, 0.6);
+		border-radius: 20px;
 		overflow: hidden;
-		transition: all 0.2s ease-out;
-		min-width: 280px;
+		transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 		display: flex;
 		flex-direction: column;
+		/* Layered shadows for depth */
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.05),
+			0 4px 20px rgba(0, 0, 0, 0.1),
+			0 8px 32px rgba(0, 0, 0, 0.08),
+			inset 0 1px 0 rgba(255, 255, 255, 1),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+	}
+
+	:global(.dark) .status-container {
+		background: linear-gradient(
+			180deg,
+			rgba(45, 45, 50, 0.95) 0%,
+			rgba(35, 35, 40, 0.95) 50%,
+			rgba(28, 28, 32, 0.98) 100%
+		);
+		border-color: rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.3),
+			0 4px 20px rgba(0, 0, 0, 0.4),
+			0 8px 32px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08),
+			inset 0 -1px 0 rgba(0, 0, 0, 0.2);
 	}
 
 	@media (min-width: 641px) {
 		.status-container {
-			bottom: 6.5rem;
+			bottom: 7.5rem;
 		}
 	}
 
 	.status-container.high-affection {
-		box-shadow: 0 0 20px var(--accent-muted);
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.05),
+			0 4px 20px rgba(0, 0, 0, 0.1),
+			0 0 40px rgba(255, 107, 157, 0.2),
+			inset 0 1px 0 rgba(255, 255, 255, 1);
+	}
+
+	:global(.dark) .status-container.high-affection {
+		box-shadow:
+			0 0 0 1px rgba(0, 0, 0, 0.3),
+			0 4px 20px rgba(0, 0, 0, 0.4),
+			0 0 50px rgba(255, 107, 157, 0.25),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
 
 	/* Toggle Button */
@@ -194,16 +177,26 @@
 		gap: 0.5rem;
 		width: 100%;
 		padding: 0.625rem 0.875rem;
-		background: transparent;
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
 		border: none;
 		border-top: 1px solid transparent;
 		cursor: pointer;
-		color: var(--color-neutral-700);
+		color: var(--text-primary);
 		font-family: inherit;
+		transition: background 0.15s;
+	}
+
+	:global(.dark) .status-toggle {
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
 	}
 
 	.expanded .status-toggle {
-		border-top: 1px solid var(--color-border);
+		border-top: 1px solid rgba(0, 0, 0, 0.06);
+		background: transparent;
+	}
+
+	:global(.dark) .expanded .status-toggle {
+		border-top-color: rgba(255, 255, 255, 0.06);
 	}
 
 	.mood-icon {
@@ -215,7 +208,7 @@
 		flex: 1;
 		font-size: 0.8rem;
 		font-weight: 500;
-		color: var(--color-neutral-600);
+		color: var(--text-secondary);
 		text-align: left;
 	}
 
@@ -224,6 +217,7 @@
 		flex-shrink: 0;
 		transition: transform 0.2s ease-out;
 		opacity: 0.4;
+		color: var(--text-tertiary);
 	}
 
 	.chevron.rotated {
@@ -231,20 +225,39 @@
 	}
 
 	.status-toggle:hover {
-		background: rgba(0, 0, 0, 0.03);
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0.02) 100%);
 	}
 
 	:global(.dark) .status-toggle:hover {
-		background: rgba(255, 255, 255, 0.05);
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
 	}
 
 	/* Expanded Content */
 	.status-details {
-		padding: 0.875rem 0.875rem 0.5rem;
+		padding: 1rem 0.875rem 0.75rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		animation: slideUp 0.2s ease-out;
+	}
+
+	/* Sims-style Vertical Stat Bars */
+	.stat-bars {
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
+	}
+
+	.stat-bars.companion-mode {
+		gap: 1.5rem;
+	}
+
+	.stat-bar-wrapper {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.375rem;
+		animation: slideUp 0.3s ease-out backwards;
+		animation-delay: calc(var(--delay) * 40ms);
 	}
 
 	@keyframes slideUp {
@@ -258,88 +271,163 @@
 		}
 	}
 
-	/* Affection Section */
-	.affection-section {
-		display: flex;
-		flex-direction: column;
-		gap: 0.375rem;
+	.stat-bar-track {
+		width: 20px;
+		height: 70px;
+		background: linear-gradient(
+			180deg,
+			rgba(0, 0, 0, 0.15) 0%,
+			rgba(0, 0, 0, 0.1) 50%,
+			rgba(0, 0, 0, 0.08) 100%
+		);
+		border-radius: 10px;
+		position: relative;
+		overflow: hidden;
+		/* Inner shadow for inset look */
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.15),
+			inset 0 0 0 1px rgba(0, 0, 0, 0.05),
+			0 1px 0 rgba(255, 255, 255, 0.5);
 	}
 
-	.affection-label {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.75rem;
+	:global(.dark) .stat-bar-track {
+		background: linear-gradient(
+			180deg,
+			rgba(0, 0, 0, 0.4) 0%,
+			rgba(0, 0, 0, 0.3) 50%,
+			rgba(0, 0, 0, 0.25) 100%
+		);
+		box-shadow:
+			inset 0 2px 4px rgba(0, 0, 0, 0.4),
+			inset 0 0 0 1px rgba(0, 0, 0, 0.2),
+			0 1px 0 rgba(255, 255, 255, 0.05);
 	}
 
-	.heart-glow {
-		display: flex;
-		filter: drop-shadow(0 0 4px rgba(244, 114, 182, 0.5));
+	.stat-bar-fill {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--bar-color) 100%, white 30%) 0%,
+			var(--bar-color) 40%,
+			color-mix(in srgb, var(--bar-color) 100%, black 15%) 100%
+		);
+		border-radius: 8px;
+		transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+		/* Glow effect */
+		box-shadow:
+			0 0 12px var(--bar-glow),
+			0 0 4px var(--bar-glow),
+			inset 0 0 0 1px rgba(255, 255, 255, 0.3);
 	}
 
-	.tier-name {
-		font-weight: 600;
-		color: var(--color-neutral-700);
+	.stat-bar-shine {
+		position: absolute;
+		top: 0;
+		left: 2px;
+		right: 50%;
+		height: 100%;
+		background: linear-gradient(
+			90deg,
+			rgba(255, 255, 255, 0.4) 0%,
+			rgba(255, 255, 255, 0.1) 100%
+		);
+		border-radius: 6px 0 0 6px;
+		pointer-events: none;
 	}
 
-	.affection-value {
-		margin-left: auto;
-		color: var(--color-neutral-500);
-		font-size: 0.7rem;
-	}
-
-	/* Stats Trio */
-	.stats-trio {
-		display: flex;
-		justify-content: space-around;
-		padding: 0.375rem 0;
-	}
-
-	/* Secondary Stats */
-	.secondary-stats {
-		display: flex;
-		flex-direction: column;
-		gap: 0.375rem;
-	}
-
-	.stat-row {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.7rem;
-		color: var(--color-neutral-600);
-	}
-
-	.stat-label {
-		width: 3.5rem;
-	}
-
-	.stat-bar-container {
-		flex: 1;
-		height: 4px;
-		background: var(--color-neutral-200);
-		border-radius: 2px;
+	/* Animated bubbles in the bar */
+	.stat-bar-bubbles {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 100%;
+		pointer-events: none;
 		overflow: hidden;
 	}
 
-	.stat-bar {
-		height: 100%;
-		border-radius: 2px;
-		transition: width 0.3s ease;
+	.bubble {
+		position: absolute;
+		width: 4px;
+		height: 4px;
+		background: rgba(255, 255, 255, 0.6);
+		border-radius: 50%;
+		bottom: -6px;
+		left: 50%;
+		transform: translateX(-50%);
+		animation: bubbleRise 2s ease-in-out infinite;
+		animation-delay: var(--bubble-delay);
+		opacity: 0;
 	}
 
-	.stat-value {
-		width: 1.5rem;
-		text-align: right;
-		font-weight: 500;
+	.bubble:nth-child(2) {
+		left: 30%;
+		width: 3px;
+		height: 3px;
+	}
+
+	.bubble:nth-child(3) {
+		left: 70%;
+		width: 3px;
+		height: 3px;
+	}
+
+	@keyframes bubbleRise {
+		0% {
+			bottom: -6px;
+			opacity: 0;
+		}
+		10% {
+			opacity: 0.7;
+		}
+		90% {
+			opacity: 0.3;
+		}
+		100% {
+			bottom: 100%;
+			opacity: 0;
+		}
+	}
+
+	.stat-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+		border-radius: 8px;
+		color: var(--bar-color);
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.1),
+			inset 0 1px 0 rgba(255, 255, 255, 0.9);
+		filter: drop-shadow(0 0 3px var(--bar-glow));
+	}
+
+	:global(.dark) .stat-icon {
+		background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+		box-shadow:
+			0 2px 4px rgba(0, 0, 0, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
+	}
+
+	.stat-label {
+		font-size: 0.55rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: var(--text-tertiary);
 	}
 
 	/* Quick Stats */
 	.quick-stats {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-		padding-top: 0.25rem;
+		gap: 0.375rem;
+		justify-content: center;
 	}
 
 	.quick-stat {
@@ -347,51 +435,46 @@
 		align-items: center;
 		gap: 0.25rem;
 		font-size: 0.65rem;
-		color: var(--color-neutral-500);
-		padding: 0.25rem 0.5rem;
-		background: var(--color-neutral-100);
-		border-radius: 0.375rem;
+		font-weight: 600;
+		color: var(--text-secondary);
+		padding: 0.3rem 0.5rem;
+		background: linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.06) 100%);
+		border-radius: 20px;
+		border: 1px solid rgba(0, 0, 0, 0.06);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	}
+
+	:global(.dark) .quick-stat {
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.04) 100%);
+		border-color: rgba(255, 255, 255, 0.08);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	}
 
 	.quick-stat.streak {
-		color: var(--ctp-peach);
-		background: color-mix(in srgb, var(--ctp-peach) 10%, transparent);
+		color: white;
+		background: linear-gradient(180deg, #ff8f3f 0%, #ff6b1a 100%);
+		border-color: rgba(0, 0, 0, 0.1);
+		box-shadow:
+			0 2px 8px rgba(255, 107, 26, 0.35),
+			inset 0 1px 0 rgba(255, 255, 255, 0.3);
 	}
 
-	/* Profile Link */
-	.profile-link {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.375rem;
-		font-size: 0.7rem;
-		font-weight: 500;
-		color: var(--accent);
+	.quick-stat.profile-link {
+		color: white;
 		text-decoration: none;
-		padding: 0.5rem;
-		border-radius: 0.5rem;
-		background: var(--accent-subtle);
+		background: linear-gradient(180deg, #4dd0ff 0%, #01B2FF 100%);
+		border-color: rgba(0, 0, 0, 0.1);
+		box-shadow:
+			0 2px 8px rgba(1, 178, 255, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.3);
+		cursor: pointer;
 		transition: all 0.15s ease;
 	}
 
-	.profile-link:hover {
-		background: var(--accent-muted);
-		transform: translateX(2px);
-	}
-
-	/* Companion Mode Header */
-	.companion-header {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding-bottom: 0.5rem;
-		border-bottom: 1px solid var(--color-neutral-200);
-		margin-bottom: 0.25rem;
-	}
-
-	.companion-title {
-		font-size: 0.8rem;
-		font-weight: 600;
-		color: var(--accent);
+	.quick-stat.profile-link:hover {
+		transform: translateY(-1px);
+		box-shadow:
+			0 4px 12px rgba(1, 178, 255, 0.4),
+			inset 0 1px 0 rgba(255, 255, 255, 0.4);
 	}
 </style>
