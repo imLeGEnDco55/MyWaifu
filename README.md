@@ -1,16 +1,16 @@
-# Utsuwa (器)
+# MyWaifu
 
 <p align="center">
-  <img src="static/brand-assets/read-me-banner.png" alt="Utsuwa Banner" />
+  <img src="static/brand-assets/read-me-banner.png" alt="MyWaifu Banner" />
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**Utsuwa is an open-source alternative to Grok Companion.** This is a platform where you can have a virtual AI waifu that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. Utsuwa is privacy-focused - your data lives entirely in your browser.
+**MyWaifu is an open-source alternative to Grok Companion.** This is a platform where you can have a virtual AI waifu that learns and grows with you, bundled with optional mechanics inspired by Japanese [dating sim](https://en.wikipedia.org/wiki/Dating_sim) games. MyWaifu is privacy-focused - your data lives entirely in your browser.
 
-"Utsuwa" means "vessel" in Japanese - a container for AI to inhabit visually.
+"MyWaifu" means "my waifu" in Japanese - a container for AI to inhabit visually.
 
 ## Features
 
@@ -78,15 +78,15 @@ Voice input is accessed via the microphone button in the chat bar. The audio vis
 ## Getting Started
 
 > [!NOTE]
-> Utsuwa is in its very early development stages. If you're using the app, **save your data often**. Early versions may not have backwards-compatible save states and could require manual reformatting.
+> MyWaifu is in its very early development stages. If you're using the app, **save your data often**. Early versions may not have backwards-compatible save states and could require manual reformatting.
 
 ### Try it Online
 
-No installation required! Use Utsuwa directly in your browser at **[utsuwa.ai](https://utsuwa.ai)**
+No installation required! Use MyWaifu directly in your browser at **[mywaifu.ai](https://mywaifu.ai)**
 
 ### Self-Hosting
 
-If you prefer to run Utsuwa locally or host your own instance:
+If you prefer to run MyWaifu locally or host your own instance:
 
 #### Prerequisites
 
@@ -98,8 +98,8 @@ If you prefer to run Utsuwa locally or host your own instance:
 
 ```bash
 # Clone the repository
-git clone https://github.com/dyascj/utsuwa.git
-cd utsuwa
+git clone https://github.com/dyascj/mywaifu.git
+cd mywaifu
 
 # Install dependencies
 pnpm install
