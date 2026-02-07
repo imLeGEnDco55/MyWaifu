@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../domain/llm_provider.dart';
 
@@ -34,26 +35,33 @@ class OpenAiProvider implements LlmService {
       ),
     );
 
-    // Simplistic SSE parsing for MVP
-    final stream = response.data.stream;
-    await for (final chunk in stream) {
-      final decoded = String.fromCharCodes(chunk);
-      final lines = decoded.split('\n');
-      for (final line in lines) {
+    final stream = response.data.stream.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true));
+    String buffer = '';
+
+    await for (final String chunk in stream) {
+      buffer += chunk;
+
+      while (true) {
+        final index = buffer.indexOf('\n');
+        if (index == -1) break;
+
+        final line = buffer.substring(0, index).trim();
+        buffer = buffer.substring(index + 1);
+
         if (line.startsWith('data: ')) {
           final data = line.substring(6).trim();
           if (data == '[DONE]') return;
 
           try {
-            // Very basic extraction for brevity in MVP
-            // Ideally use a robust JSON parser here
-            if (data.contains('"content":"')) {
-              final content = data.split('"content":"')[1].split('"')[0];
-              // Unescape basic characters if needed
-              yield StreamChunk(content: content.replaceAll('\\n', '\n'));
+            final json = jsonDecode(data);
+            if (json['choices'] != null && json['choices'].isNotEmpty) {
+              final delta = json['choices'][0]['delta'];
+              if (delta != null && delta['content'] != null) {
+                yield StreamChunk(content: delta['content']);
+              }
             }
           } catch (_) {
-            // Ignore malformed chunks in MVP
+            // Ignore malformed chunks
           }
         }
       }
@@ -97,17 +105,33 @@ class AnthropicProvider implements LlmService {
       ),
     );
 
-    await for (final chunk in response.data.stream) {
-      final decoded = String.fromCharCodes(chunk);
-      final lines = decoded.split('\n');
-      for (final line in lines) {
+    final stream = response.data.stream.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true));
+    String buffer = '';
+
+    await for (final String chunk in stream) {
+      buffer += chunk;
+
+      while (true) {
+        final index = buffer.indexOf('\n');
+        if (index == -1) break;
+
+        final line = buffer.substring(0, index).trim();
+        buffer = buffer.substring(index + 1);
+
         if (line.startsWith('data: ')) {
           final data = line.substring(6).trim();
-          if (data.contains('"text":"')) {
-            final content = data.split('"text":"')[1].split('"')[0];
-            yield StreamChunk(content: content.replaceAll('\\n', '\n'));
-          } else if (data.contains('"type":"message_stop"')) {
-            return;
+
+          try {
+            final json = jsonDecode(data);
+            if (json['type'] == 'content_block_delta' &&
+                json['delta'] != null &&
+                json['delta']['text'] != null) {
+              yield StreamChunk(content: json['delta']['text']);
+            } else if (json['type'] == 'message_stop') {
+              return;
+            }
+          } catch (_) {
+            // Ignore parse errors
           }
         }
       }
@@ -124,7 +148,6 @@ class GoogleProvider implements LlmService {
     ProviderConfig config,
     List<ChatMessage> messages,
   ) async* {
-    // Gemini 1.5 format (simplistic for MVP)
     final response = await dio.post(
       '${config.baseUrl}/v1beta/models/${config.model}:streamGenerateContent?key=${config.apiKey}',
       data: {
@@ -142,16 +165,11 @@ class GoogleProvider implements LlmService {
       options: Options(responseType: ResponseType.stream),
     );
 
-    // Google uses a JSON array stream or multi-part
-    // Format: [{ "candidates": [{ "content": { "parts": [{ "text": "..." }] } }] }]
-    // Chunks can come as `[{...` or `, {...` or `]`
-    // We implement a buffer to handle split chunks (e.g. "text" field split across packets)
-
+    final stream = response.data.stream.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true));
     final StringBuffer buffer = StringBuffer();
 
-    await for (final chunk in response.data.stream) {
-      final decoded = String.fromCharCodes(chunk);
-      buffer.write(decoded);
+    await for (final String chunk in stream) {
+      buffer.write(chunk);
 
       String content = buffer.toString();
       // Regex to find complete "text": "..." fields
@@ -177,12 +195,6 @@ class GoogleProvider implements LlmService {
           }
         }
 
-        // Remove processed part from buffer, keep the rest (potential partial chunk)
-        // We only keep content AFTER the last successfully parsed text field
-        // However, we must be careful not to discard unrelated JSON structure that
-        // might immediately follow. But for "text" extraction, we only care about
-        // what comes *after* what we found.
-        // A safer approach for this specific regex is to clear up to the last match.
         final remaining = content.substring(lastMatchEnd);
         buffer.clear();
         buffer.write(remaining);
