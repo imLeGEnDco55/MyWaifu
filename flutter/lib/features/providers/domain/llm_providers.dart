@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../domain/llm_provider.dart';
 
@@ -34,26 +35,34 @@ class OpenAiProvider implements LlmService {
       ),
     );
 
-    // Simplistic SSE parsing for MVP
+    // Proper SSE parsing with buffering
     final stream = response.data.stream;
+    String buffer = '';
+
     await for (final chunk in stream) {
-      final decoded = String.fromCharCodes(chunk);
-      final lines = decoded.split('\n');
-      for (final line in lines) {
+      buffer += utf8.decode(chunk, allowMalformed: true);
+
+      while (true) {
+        final index = buffer.indexOf('\n');
+        if (index == -1) break;
+
+        final line = buffer.substring(0, index).trim();
+        buffer = buffer.substring(index + 1);
+
         if (line.startsWith('data: ')) {
           final data = line.substring(6).trim();
           if (data == '[DONE]') return;
 
           try {
-            // Very basic extraction for brevity in MVP
-            // Ideally use a robust JSON parser here
-            if (data.contains('"content":"')) {
-              final content = data.split('"content":"')[1].split('"')[0];
-              // Unescape basic characters if needed
-              yield StreamChunk(content: content.replaceAll('\\n', '\n'));
+            final json = jsonDecode(data);
+            if (json['choices'] != null && json['choices'].isNotEmpty) {
+              final delta = json['choices'][0]['delta'];
+              if (delta != null && delta['content'] != null) {
+                yield StreamChunk(content: delta['content']);
+              }
             }
           } catch (_) {
-            // Ignore malformed chunks in MVP
+            // Ignore malformed chunks
           }
         }
       }
@@ -97,17 +106,32 @@ class AnthropicProvider implements LlmService {
       ),
     );
 
+    String buffer = '';
+
     await for (final chunk in response.data.stream) {
-      final decoded = String.fromCharCodes(chunk);
-      final lines = decoded.split('\n');
-      for (final line in lines) {
+      buffer += utf8.decode(chunk, allowMalformed: true);
+
+      while (true) {
+        final index = buffer.indexOf('\n');
+        if (index == -1) break;
+
+        final line = buffer.substring(0, index).trim();
+        buffer = buffer.substring(index + 1);
+
         if (line.startsWith('data: ')) {
           final data = line.substring(6).trim();
-          if (data.contains('"text":"')) {
-            final content = data.split('"text":"')[1].split('"')[0];
-            yield StreamChunk(content: content.replaceAll('\\n', '\n'));
-          } else if (data.contains('"type":"message_stop"')) {
-            return;
+
+          try {
+            final json = jsonDecode(data);
+            if (json['type'] == 'content_block_delta' &&
+                json['delta'] != null &&
+                json['delta']['text'] != null) {
+              yield StreamChunk(content: json['delta']['text']);
+            } else if (json['type'] == 'message_stop') {
+              return;
+            }
+          } catch (_) {
+            // Ignore parse errors
           }
         }
       }
