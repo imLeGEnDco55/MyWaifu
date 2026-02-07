@@ -35,12 +35,11 @@ class OpenAiProvider implements LlmService {
       ),
     );
 
-    // Proper SSE parsing with buffering
-    final stream = response.data.stream;
+    final stream = response.data.stream.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true));
     String buffer = '';
 
-    await for (final chunk in stream) {
-      buffer += utf8.decode(chunk, allowMalformed: true);
+    await for (final String chunk in stream) {
+      buffer += chunk;
 
       while (true) {
         final index = buffer.indexOf('\n');
@@ -106,10 +105,11 @@ class AnthropicProvider implements LlmService {
       ),
     );
 
+    final stream = response.data.stream.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true));
     String buffer = '';
 
-    await for (final chunk in response.data.stream) {
-      buffer += utf8.decode(chunk, allowMalformed: true);
+    await for (final String chunk in stream) {
+      buffer += chunk;
 
       while (true) {
         final index = buffer.indexOf('\n');
@@ -148,7 +148,6 @@ class GoogleProvider implements LlmService {
     ProviderConfig config,
     List<ChatMessage> messages,
   ) async* {
-    // Gemini 1.5 format (simplistic for MVP)
     final response = await dio.post(
       '${config.baseUrl}/v1beta/models/${config.model}:streamGenerateContent?key=${config.apiKey}',
       data: {
@@ -166,16 +165,11 @@ class GoogleProvider implements LlmService {
       options: Options(responseType: ResponseType.stream),
     );
 
-    // Google uses a JSON array stream or multi-part
-    // Format: [{ "candidates": [{ "content": { "parts": [{ "text": "..." }] } }] }]
-    // Chunks can come as `[{...` or `, {...` or `]`
-    // We implement a buffer to handle split chunks (e.g. "text" field split across packets)
-
+    final stream = response.data.stream.cast<List<int>>().transform(const Utf8Decoder(allowMalformed: true));
     final StringBuffer buffer = StringBuffer();
 
-    await for (final chunk in response.data.stream) {
-      final decoded = String.fromCharCodes(chunk);
-      buffer.write(decoded);
+    await for (final String chunk in stream) {
+      buffer.write(chunk);
 
       String content = buffer.toString();
       // Regex to find complete "text": "..." fields
@@ -201,12 +195,6 @@ class GoogleProvider implements LlmService {
           }
         }
 
-        // Remove processed part from buffer, keep the rest (potential partial chunk)
-        // We only keep content AFTER the last successfully parsed text field
-        // However, we must be careful not to discard unrelated JSON structure that
-        // might immediately follow. But for "text" extraction, we only care about
-        // what comes *after* what we found.
-        // A safer approach for this specific regex is to clear up to the last match.
         final remaining = content.substring(lastMatchEnd);
         buffer.clear();
         buffer.write(remaining);
